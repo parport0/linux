@@ -43,6 +43,18 @@ static DEFINE_SPINLOCK(driver_lock);
 static struct class *tee_class;
 static dev_t tee_devt;
 
+static int tee_check_owner(struct tee_context *ctx)
+{
+	int rval = 0;
+
+	if (ctx->owner_tgid == current->tgid &&
+	    ctx->owner_time == current->group_leader->start_boottime)
+		rval = 1;
+
+	return rval;
+}
+
+
 static struct tee_context *teedev_open(struct tee_device *teedev)
 {
 	int rc;
@@ -62,6 +74,8 @@ static struct tee_context *teedev_open(struct tee_device *teedev)
 	rc = teedev->desc->ops->open(ctx);
 	if (rc)
 		goto err;
+	ctx->owner_tgid = current->tgid;
+	ctx->owner_time = current->group_leader->start_boottime;
 
 	return ctx;
 err:
@@ -817,6 +831,9 @@ static long tee_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	struct tee_context *ctx = filp->private_data;
 	void __user *uarg = (void __user *)arg;
+
+	if (!tee_check_owner(ctx))
+		return -EPERM;
 
 	switch (cmd) {
 	case TEE_IOC_VERSION:

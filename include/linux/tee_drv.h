@@ -49,6 +49,8 @@ struct tee_shm_pool;
  *              non-blocking in nature.
  * @cap_memref_null: flag indicating if the TEE Client support shared
  *                   memory buffer with a NULL pointer.
+ * @owner_tgid:	pid of the owner task.
+ * @owner_time:	start_boottime of the owner task.
  */
 struct tee_context {
 	struct tee_device *teedev;
@@ -57,6 +59,8 @@ struct tee_context {
 	bool releasing;
 	bool supp_nowait;
 	bool cap_memref_null;
+	pid_t owner_tgid;
+	u64 owner_time;
 };
 
 struct tee_param_memref {
